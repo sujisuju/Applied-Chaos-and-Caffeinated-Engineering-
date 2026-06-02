@@ -22,7 +22,7 @@ st.markdown("""
         border-color: #deff9a;
     }
     </style>
-    """, unsafe_allow_stdio=True)
+    """, unsafe_allow_html=True)
 
 # --- NAVIGATION SIDEBAR ---
 st.sidebar.title("🔬 Master Control Panel")
@@ -39,20 +39,17 @@ if choice == "🏠 Home Dashboard":
     with col1:
         st.markdown("### Module 01")
         if st.button("📊 FTIR ANALYSIS"):
-            st.rerun() if hasattr(st, "rerun") else st.experimental_rerun()
-        st.info("**Capabilities:**\n* Binarization Matrix Processing\n* Baseline Reconstruction\n* Functional Group Assignment Identification")
+            st.info("Directing to FTIR Matrix Digitizer via Sidebar...")
             
     with col2:
         st.markdown("### Module 02")
         if st.button("⚡ VOLTAMMETRY"):
-            st.rerun() if hasattr(st, "rerun") else st.experimental_rerun()
-        st.success("**Capabilities:**\n* Redox Couple Dynamic Extraction\n* Peak Potentials Anodic/Cathodic Tracking\n* Legacy Screenshot Plot Digitization")
+            st.success("Directing to Redox Engine via Sidebar...")
             
     with col3:
         st.markdown("### Module 03")
         if st.button("🧪 GCMS ANALYSIS"):
-            st.rerun() if hasattr(st, "rerun") else st.experimental_rerun()
-        st.warning("**Capabilities:**\n* Chromatogram Peak Separation Resolution\n* Retention Time Sequence Tracking\n* Chemical Profile Identity Matrix Mapping")
+            st.warning("Directing to GCMS Tracker via Sidebar...")
 
 elif choice == "📊 FTIR Analysis":
     try:
