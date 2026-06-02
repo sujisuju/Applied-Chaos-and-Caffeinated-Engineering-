@@ -1,48 +1,93 @@
 import streamlit as st
+import cv2
+import numpy as np
 import pandas as pd
 
-# Set up a beautiful web layout
-st.set_page_config(page_title="FTIR Spectroscopic Analyzer", layout="wide")
+st.set_page_config(page_title="Advanced FTIR Digitizer", layout="wide")
+st.title("🔬 Advanced FTIR Visual Graph Digitizer")
+st.write("Upload a clean screenshot of an FTIR spectrum graph to extract numeric data and analyze peaks.")
 
-st.title("🔬 FTIR Spectrum Functional Group Analyzer")
-st.write("Upload a spectrum text/CSV file with 'wavenumber' and 'absorbance' columns to begin.")
+# 1. Image File Uploader
+uploaded_image = st.file_uploader("📂 Upload FTIR Graph Image (.png, .jpg)", type=["png", "jpg", "jpeg"])
 
-# 1. File Uploader Component
-uploaded_file = st.file_uploader("📂 Drag and drop your FTIR CSV file here", type=["csv"])
+if uploaded_image is not None:
+    # Convert uploaded file into an OpenCV image matrix
+    file_bytes = np.asarray(bytearray(uploaded_image.read()), dtype=np.uint8)
+    img = cv2.imdecode(file_bytes, cv2.IMREAD_COLOR)
+    h_img, w_img, _ = img.shape
 
-if uploaded_file is not None:
-    try:
-        # 2. Read the uploaded file into Pandas
-        data = pd.read_csv(uploaded_file)
+    col1, col2 = st.columns(2)
+    with col1:
+        st.image(uploaded_image, caption="Original Spectrum Screenshot", use_container_width=True)
+
+    # 2. Computer Vision Processing: Isolate the spectral line
+    gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+    # Binary thresholding: isolate dark pixels (the curve) from light background
+    _, thresh = cv2.threshold(gray, 100, 255, cv2.THRESH_BINARY_INV)
+
+    # 3. Extract Pixel Coordinates
+    pixel_x = []
+    pixel_y = []
+    for x in range(w_img):
+        # Find all black pixels in this column
+        column_pixels = np.where(thresh[:, x] == 255)[0]
+        if len(column_pixels) > 0:
+            # Take the average row position of the line in this column
+            y_center = int(np.mean(column_pixels))
+            pixel_x.append(x)
+            # Invert Y axis because pixel index (0) starts at the top of the screen
+            pixel_y.append(h_img - y_center)
+
+    # 4. Calibration Parameters (User input for mapping)
+    st.sidebar.header("📐 Axis Calibration")
+    st.sidebar.write("Set the boundaries matching your uploaded image's axes:")
+    wn_start = st.sidebar.number_input("Leftmost Wavenumber (cm⁻¹)", value=4000)
+    wn_end = st.sidebar.number_input("Rightmost Wavenumber (cm⁻¹)", value=400)
+    
+    if len(pixel_x) > 0:
+        # Convert pixel values to chemical scale coordinates
+        wavenumbers = wn_start + (np.array(pixel_x) / w_img) * (wn_end - wn_start)
         
-        # Ensure column names match expected formats
-        wavenumber = data["wavenumber"].values
-        absorbance = data["absorbance"].values
+        # Normalize the extracted Y pixels to a relative absorbance scale (0.0 to 1.0)
+        min_y, max_y = min(pixel_y), max(pixel_y)
+        absorbance = (np.array(pixel_y) - min_y) / (max_y - min_y) if max_y != min_y else np.zeros_like(pixel_y)
+
+        # Structure data into a dataframe
+        extracted_df = pd.DataFrame({"wavenumber": wavenumbers, "absorbance": absorbance})
+
+        with col2:
+            st.subheader("📈 Digitized Numerical Data Plot")
+            st.line_chart(data=extracted_df, x="wavenumber", y="absorbance")
+
+        # 5. Algorithmic Peak Detection (Simplified local maxima search)
+        st.subheader("🔍 Automated Peak Analysis & Database Matching")
+        detected_peaks = []
         
-        st.success(f"Successfully loaded {len(wavenumber)} data points!")
-        
-        # 3. Display the raw data plot dynamically
-        st.subheader("📈 Interactive Spectral Data Plot")
-        st.line_chart(data=data, x="wavenumber", y="absorbance")
-        
-        # 4. Global Maximum Detection
-        max_idx = data["absorbance"].idxmax()
-        max_abs = absorbance[max_idx]
-        max_wn = wavenumber[max_idx]
-        
-        st.metric(label="Global Maximum Peak", value=f"{max_abs:.3f} Abs", delta=f"{max_wn:.1f} cm⁻¹")
-        
-        # 5. Core Chemistry Logic: Carbonyl Detection Example
-        st.subheader("🔬 Chemical Interpretation")
-        
-        carbonyl_absorbances = [absorbance[i] for i in range(len(wavenumber)) if 1650 <= wavenumber[i] <= 1800]
-        
-        if carbonyl_absorbances and max(carbonyl_absorbances) > 0.05:
-            st.success("✅ Carbonyl (C=O) Stretch DETECTED in the 1650–1800 cm⁻¹ region!")
+        # Simple window checking loop to identify peaks
+        for i in range(5, len(absorbance) - 5):
+            if absorbance[i] == max(absorbance[i-5:i+5]) and absorbance[i] > 0.15:
+                wn_val = wavenumbers[i]
+                abs_val = absorbance[i]
+                
+                # Check against functional group reference database thresholds
+                assignment = "Fingerprint Region / Unassigned"
+                if 3200 <= wn_val <= 3600:
+                    assignment = "O-H Stretch (Alcohol/Hydroxyl group) — Broad Peak"
+                elif 2850 <= wn_val <= 3000:
+                    assignment = "C-H Stretch (Alkane aliphatic group)"
+                elif 1650 <= wn_val <= 1800:
+                    assignment = "C=O Stretch (Carbonyl structural group) — Sharp Peak"
+                elif 1500 <= wn_val <= 1600:
+                    assignment = "C=C Stretch (Aromatic / Alkene ring system)"
+                
+                detected_peaks.append({"Wavenumber (cm⁻¹)": round(wn_val, 1), "Relative Intensity": round(abs_val, 2), "Functional Group Assignment": assignment})
+
+        if detected_peaks:
+            # Drop duplicates caused by adjacent matching indices
+            peaks_df = pd.DataFrame(detected_peaks).drop_duplicates(subset=["Wavenumber (cm⁻¹)"]).reset_index(drop=True)
+            st.table(peaks_df)
         else:
-            st.info("❌ No significant carbonyl peak detected in the standard region.")
+            st.info("No significant peaks detected above baseline threshold.")
             
-    except Exception as e:
-        st.error(f"Error parsing file: {e}. Please ensure columns are labeled exactly 'wavenumber' and 'absorbance'.")
 else:
-    st.info("💡 Waiting for a file to be uploaded. Drag one in to run the calculator!")
+    st.info("💡 App is active. Please upload an image file of an FTIR graph to run the digitization matrix.")
