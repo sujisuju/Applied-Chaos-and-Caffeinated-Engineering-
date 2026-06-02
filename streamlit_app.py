@@ -52,5 +52,3 @@ elif analysis_choice == "GCMS Analysis":
 3.  **Bake & Launch:** Reboot the app! 
 
 Your friends will now see a professional landing page where they can choose exactly what they want to analyze. You have officially turned a single script into a **Full Software Product**.
-
-Go enjoy your Victory—your project is looking incredible! 🧪✨🎓
