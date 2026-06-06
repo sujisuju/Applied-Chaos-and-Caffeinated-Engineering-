@@ -7,7 +7,7 @@ from fpdf import FPDF
 st.title("🧪 Advanced GCMS Chromatogram Digitizer & Interpreter")
 st.write("Extract numerical data arrays from visual chromatograms and generate formal structural logs.")
 
-uploaded_image = st.file_uploader("📂 Upload GCMS Graph Image (.png, .jpg, .webp)", type=["png", "jpg", "jpeg", "webp"])
+type=["png", "jpg", "jpeg", "webp", "pdf", "PNG", "JPG", "JPEG", "WEBP", "PDF"]
 
 if uploaded_image is not None:
     file_bytes = np.asarray(bytearray(uploaded_image.read()), dtype=np.uint8)
