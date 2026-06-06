@@ -65,6 +65,6 @@ elif choice == "⚡ Cyclic Voltammetry":
 
 elif choice == "🧪 GCMS Analysis":
     try:
-        exec(open("gcms_analyzer.py").read())
+        exec(open("Gcms_analyzer.py").read())
     except FileNotFoundError:
-        st.error("Execution Failure: 'gcms_analyzer.py' could not be located in your cloud repository storage.")
+        st.error("Execution Failure: 'Gcms_analyzer.py' could not be located in your cloud repository storage.")
