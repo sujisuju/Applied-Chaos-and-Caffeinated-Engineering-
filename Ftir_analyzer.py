@@ -4,35 +4,32 @@ import numpy as np
 import pandas as pd
 
 st.title("🔬 Advanced FTIR Spectral Digitizer & Molecular Interpreter")
-st.write("Extract precise optical data from visual infrared spectra and generate automated structural diagnostics.")
+st.write("Extract precise optical data from visual infrared spectra and generate streamlined structural diagnostics.")
 
 uploaded_image = st.file_uploader("📂 Upload FTIR Graph Image (.png, .jpg, .jpeg, .webp)", type=["png", "jpg", "jpeg", "webp"])
 
 if uploaded_image is not None:
-    # Decode image matrix into OpenCV format
     file_bytes = np.asarray(bytearray(uploaded_image.read()), dtype=np.uint8)
     img = cv2.imdecode(file_bytes, cv2.IMREAD_COLOR)
     h_img, w_img, _ = img.shape
 
     # --- SIDEBAR TUNING CONTROLS ---
     st.sidebar.header("🎛️ Optical Calibration")
-    crop_left = st.sidebar.slider("Crop Left Margin (Axes Lines)", 0, 50, 10)
+    crop_left = st.sidebar.slider("Crop Left Margin", 0, 50, 10)
     crop_right = st.sidebar.slider("Crop Right Margin", 0, 50, 5)
     crop_top = st.sidebar.slider("Crop Top Margin", 0, 50, 5)
-    crop_bottom = st.sidebar.slider("Crop Bottom Margin (Wavenumber Labels)", 0, 50, 10)
+    crop_bottom = st.sidebar.slider("Crop Bottom Margin", 0, 50, 10)
     line_threshold = st.sidebar.slider("Spectral Line Sensitivity", 5, 255, 120)
     
     st.sidebar.subheader("📐 Wavenumber Scale Calibration")
     wn_start = st.sidebar.number_input("Leftmost Wavenumber (cm⁻¹)", value=4000)
     wn_end = st.sidebar.number_input("Rightmost Wavenumber (cm⁻¹)", value=400)
 
-    # Boundary math for cropping
     x_start_px = int(w_img * (crop_left / 100))
     x_end_px = int(w_img * (1 - (crop_right / 100)))
     y_start_px = int(h_img * (crop_top / 100))
     y_end_px = int(h_img * (1 - (crop_bottom / 100)))
 
-    # Matrix Binarization to capture the thin curve
     gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
     _, thresh = cv2.threshold(gray, line_threshold, 255, cv2.THRESH_BINARY_INV)
 
@@ -44,7 +41,6 @@ if uploaded_image is not None:
         st.image(debug_img, caption="Active Scanning Zone (Green Box)", use_container_width=True)
         st.image(thresh[y_start_px:y_end_px, x_start_px:x_end_px], caption="Isolated Infrared Trace Mask", use_container_width=True)
 
-    # Coordinate Extraction
     scan_x, scan_y = [], []
     scan_width = x_end_px - x_start_px
     scan_height = y_end_px - y_start_px
@@ -57,12 +53,10 @@ if uploaded_image is not None:
             scan_y.append(scan_height - y_center)
 
     if len(scan_x) > 0:
-        # Interpolation mapping array math
         wavenumbers = wn_start + (np.array(scan_x) / scan_width) * (wn_end - wn_start)
         min_y, max_y = min(scan_y), max(scan_y)
         absorbance = (np.array(scan_y) - min_y) / (max_y - min_y) if max_y != min_y else np.zeros_like(scan_y)
 
-        # Smooth signal noise using a 3-pixel rolling mean window filter
         smooth_abs = pd.Series(absorbance).rolling(window=3, center=True).mean().fillna(0).values
         extracted_df = pd.DataFrame({"wavenumber": wavenumbers, "absorbance": smooth_abs})
 
@@ -71,76 +65,68 @@ if uploaded_image is not None:
             st.line_chart(data=extracted_df, x="wavenumber", y="absorbance")
 
         st.subheader("🔍 Identified Absorptivity Peaks & Structural Signatures")
-        detected_peaks = []
+        
+        # Initialize dictionary buckets for grouping batches of peaks
+        batches = {
+            "Hydroxyl / Bound Water Region (3200 - 3650 cm⁻¹)": [],
+            "Amide / Amine N-H Coordination Region (3250 - 3400 cm⁻¹)": [],
+            "Aliphatic C-H Backbone stretching Region (2840 - 3000 cm⁻¹)": [],
+            "Carbonyl Double-Bond Formations (1690 - 1750 cm⁻¹)": [],
+            "Amide I & II Polymer Coupling Tracks (1530 - 1689 cm⁻¹)": [],
+            "Fingerprint Matrix Skeletal Vibrations (400 - 1499 cm⁻¹)": []
+        }
         
         # Local coordinate maxima check loop
         for i in range(5, len(smooth_abs) - 5):
             if smooth_abs[i] == max(smooth_abs[i-5:i+5]) and smooth_abs[i] > 0.12:
-                wn_val = wavenumbers[i]
-                abs_val = smooth_abs[i]
+                wn_val = round(wavenumbers[i], 1)
+                abs_val = round(smooth_abs[i], 2)
                 
-                # Rigorous reference assignment matching logic
-                assignment = "Fingerprint Region (C-O, C-C, C-N Skeletal Vibrations)"
-                group_class = "Complex Skeletal Matrix"
-                
+                # Direct peaks into their designated scientific batches
                 if 3200 <= wn_val <= 3650:
-                    assignment = "O-H Stretching Mode (Intermolecular Hydrogen Bonding)"
-                    group_class = "Alcohol / Hydroxyl / Bound Water"
-                elif 3250 <= wn_val <= 3400:
-                    assignment = "N-H Stretching Vibration (Amide/Amine Coordination)"
-                    group_class = "Polyamide / Peptide Backbone"
+                    batches["Hydroxyl / Bound Water Region (3200 - 3650 cm⁻¹)"].append((wn_val, abs_val))
                 elif 2840 <= wn_val <= 3000:
-                    assignment = "C-H Aliphatic Stretch (CH₂ and CH₃ symmetric/asymmetric stretching)"
-                    group_class = "Saturated Alkanes / Polymer Backbone"
+                    batches["Aliphatic C-H Backbone stretching Region (2840 - 3000 cm⁻¹)"].append((wn_val, abs_val))
                 elif 1690 <= wn_val <= 1750:
-                    assignment = "C=O Stretching Mode (Strong Carbonyl Dipole Moment)"
-                    group_class = "Esters / Aldehydes / Ketones / Carboxylic Acids"
-                elif 1630 <= wn_val <= 1689:
-                    assignment = "Amide I Band (Primary/Secondary C=O Stretching with N-H coupling)"
-                    group_class = "Proteins / Nylon / Polyurethane Linkages"
-                elif 1500 <= wn_val <= 1600:
-                    assignment = "Amide II Band (N-H In-Plane Bending combined with C-N stretching)"
-                    group_class = "Nitrogenous Structural Complexes"
-                elif 2100 <= wn_val <= 2260:
-                    assignment = "C≡N or C≡C Triple Bond Stretching"
-                    group_class = "Nitriles / Alkyne Formations"
+                    batches["Carbonyl Double-Bond Formations (1690 - 1750 cm⁻¹)"].append((wn_val, abs_val))
+                elif 1530 <= wn_val <= 1689:
+                    batches["Amide I & II Polymer Coupling Tracks (1530 - 1689 cm⁻¹)"].append((wn_val, abs_val))
+                elif wn_val < 1500:
+                    batches["Fingerprint Matrix Skeletal Vibrations (400 - 1499 cm⁻¹)"].append((wn_val, abs_val))
 
-                detected_peaks.append({
-                    "Wavenumber (cm⁻¹)": round(wn_val, 1),
-                    "Relative Intensity": round(abs_val, 2),
-                    "Vibrational Assignment": assignment,
-                    "Functional Group Class": group_class
-                })
-
-        if detected_peaks:
-            peaks_df = pd.DataFrame(detected_peaks).drop_duplicates(subset=["Wavenumber (cm⁻¹)"]).reset_index(drop=True)
-            st.table(peaks_df)
-            
-            # --- SCIENTIFIC INTERPRETATION GENERATOR ---
-            st.markdown("### 📝 Detailed Spectroscopic Interpretation Summary")
-            st.write("This section breaks down the physical meaning behind the graph's layout based on the rules of infrared quantum mechanics:")
-            
-            # Global assessment check
-            classes_found = peaks_df["Functional Group Class"].values
-            
-            if "Polyamide / Peptide Backbone" in classes_found or "Proteins / Nylon / Polyurethane Linkages" in classes_found:
-                st.success("🧬 **Material Diagnosis - Polyamide (Nylon-Type) Structure Identified:**\n"
-                           "The simultaneous presence of the **Amide I band** (strong C=O stretching near 1640–1650 cm⁻¹) and the **Amide II band** (N-H bending combination near 1540 cm⁻¹), backed by the high-frequency N-H stretch, is a classic fingerprint profile of nylon polymer variants or protein backbones. The graph is explicitly expressing a heavily coupled secondary amide network.")
-            elif "Esters / Aldehydes / Ketones / Carboxylic Acids" in classes_found and "Alcohol / Hydroxyl / Bound Water" in classes_found:
-                st.warning("🧪 **Material Diagnosis - Carboxylic Acid or Hydrolyzed Ester Matrix:**\n"
-                           "The matching of a broad, wide absorption envelope in the 3200–3600 cm⁻¹ region alongside a sharp, intense carbonyl peak in the 1700 cm⁻¹ region indicates strong hydrogen-bonded acid groups or moisture-compromised structures.")
-
-            # Point-by-point scientific translation loop
-            for index, row in peaks_df.iterrows():
-                wn = row["Wavenumber (cm⁻¹)"]
-                int_val = row["Relative Intensity"]
-                vib = row["Vibrational Assignment"]
-                fg = row["Functional Group Class"]
+        # --- GENERATE SINGLE BATCH DESCRIPTIONS WITHOUT REPETITION ---
+        has_peaks = False
+        
+        for batch_name, peaks in batches.items():
+            if len(peaks) > 0:
+                has_peaks = True
+                # Deduplicate peaks found tightly adjacent
+                unique_peaks = sorted(list(set(peaks)), key=lambda x: x[0], reverse=True)[:5]
                 
-                st.markdown(f"**📍 Peak Feature at {wn} cm⁻¹:**")
-                st.write(f"- **The Science Behind It:** When infrared light passed through your sample, the molecular covalent bonds matching the frequency of **{wn} cm⁻¹** absorbed the photons. This precise packet of energy caused the chemical bonds to experience an active **{vib}**.")
-                st.write(f"- **What the Graph is Indicating:** The vertical absorbance height of **{int_val}** expresses the relative strength of the changing dipole moment. A sharper, deeper transmittance drop (or higher absorbance peak) indicates a highly concentrated population of the **{fg}** functional cluster within the structural matrix of your material.")
-        else:
+                # 1. Create a clean list display of numbers for this batch
+                st.markdown(f"### 🗂️ {batch_name}")
+                peak_list_text = "  |  ".join([f"**{wn} cm⁻¹** (Absorbance: {val})" for wn, val in unique_peaks])
+                st.info(f"📍 **Registered Peaks in this Batch:** {peak_list_text}")
+                
+                # 2. Provide ONLY ONE deep scientific description tailored to that specific group
+                if "Hydroxyl" in batch_name:
+                    st.write("**🧬 Molecular Expression:** These high-frequency photon absorptions indicate intermolecular hydrogen bonding dynamics. The wide profile typically signifies stretching modulations of O-H networks or structural water clusters bound within the material layer.")
+                
+                elif "Aliphatic" in batch_name:
+                    st.write("**🧬 Molecular Expression:** This batch captures the structural core of organic molecules. These symmetric and asymmetric vibrations outline the stretching transitions of saturated aliphatic $CH_2$ and $CH_3$ carbon frames composing the polymer backbone.")
+                
+                elif "Carbonyl" in batch_name:
+                    st.write("**🧬 Molecular Expression:** These highly energetic peaks express a very strong changing dipole moment native to a structural $C=O$ double bond. It indicates presence of ester, ketone, or carboxylic acid distributions inside the matrix.")
+                
+                elif "Amide" in batch_name:
+                    st.write("**🧬 Molecular Expression:** This indicates heavily coupled nitrogenous configurations. Strong bands tracing here characterize structural Amide I (carbonyl stretching) and Amide II (in-plane N-H bending) coordination networks, typical of complex polyamide engineering composites.")
+                
+                elif "Fingerprint" in batch_name:
+                    st.write("**🧬 Molecular Expression:** This hyper-dense collection marks the macro-structural skeletal fingerprint of the compound. The complex layout of positions represents localized bending, rocking, and twisting modes of single-bond $C-O$, $C-C$, and $C-N$ connections unique to this specific material recipe.")
+                
+                st.markdown("---")
+
+        if not has_peaks:
             st.info("💡 Adjust the tuning sliders on the left sidebar to change sensitivity and lock onto your spectrum curve.")
 else:
     st.info("💡 Ready. Drop a clean screenshot of an FTIR graph in to run advanced computer vision diagnostics.")
