@@ -98,6 +98,6 @@ with tab_cv:
 
 with tab_gcms:
     try:
-        exec(open("gcms_analyzer.py").read())
+        exec(open("Gcms_analyzer.py").read())
     except Exception as e:
         st.error(f"GCMS Module Loading Interrupted: {e}")
