@@ -66,7 +66,7 @@ with tab_home:
         <div class="hero-container">
             <div class="lab-badge">🧪⚗️</div>
             <div class="hero-title">Welcome to <span>Applied Chaos & Caffeinated Engineering</span></div>
-            <div class="hero-subtitle">The Unified Materials, Energy Storage, and Spectroscopic Digitization Platform</div>
+      
         </div>
         """, unsafe_allow_html=True)
     
