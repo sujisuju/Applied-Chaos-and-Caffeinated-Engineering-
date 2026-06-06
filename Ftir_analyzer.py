@@ -2,6 +2,7 @@ import streamlit as st
 import cv2
 import numpy as np
 import pandas as pd
+from fpdf import FPDF
 
 st.title("🔬 Advanced FTIR Spectral Digitizer & Molecular Interpreter")
 st.write("Extract precise optical data from visual infrared spectra and generate streamlined structural diagnostics.")
@@ -22,8 +23,8 @@ if uploaded_image is not None:
     line_threshold = st.sidebar.slider("Spectral Line Sensitivity", 5, 255, 120)
     
     st.sidebar.subheader("📐 Wavenumber Scale Calibration")
-    wn_start = st.sidebar.number_input("Leftmost Wavenumber (cm⁻¹)", value=4000)
-    wn_end = st.sidebar.number_input("Rightmost Wavenumber (cm⁻¹)", value=400)
+    wn_start = st.sidebar.number_input("Leftmost Wavenumber (cm-1)", value=4000)
+    wn_end = st.sidebar.number_input("Rightmost Wavenumber (cm-1)", value=400)
 
     x_start_px = int(w_img * (crop_left / 100))
     x_end_px = int(w_img * (1 - (crop_right / 100)))
@@ -62,12 +63,13 @@ if uploaded_image is not None:
 
         st.subheader("🔍 Identified Absorptivity Peaks & Structural Signatures")
         
+        # --- FIXED BATCH TITLES (Standard characters only!) ---
         batches = {
-            "Hydroxyl / Bound Water Region (3200 - 3650 cm⁻¹)": [],
-            "Aliphatic C-H Backbone stretching Region (2840 - 3000 cm⁻¹)": [],
-            "Carbonyl Double-Bond Formations (1690 - 1750 cm⁻¹)": [],
-            "Amide I & II Polymer Coupling Tracks (1530 - 1689 cm⁻¹)": [],
-            "Fingerprint Matrix Skeletal Vibrations (400 - 1499 cm⁻¹)": []
+            "Hydroxyl / Bound Water Region (3200 - 3650 cm-1)": [],
+            "Aliphatic C-H Backbone stretching Region (2840 - 3000 cm-1)": [],
+            "Carbonyl Double-Bond Formations (1690 - 1750 cm-1)": [],
+            "Amide I & II Polymer Coupling Tracks (1530 - 1689 cm-1)": [],
+            "Fingerprint Matrix Skeletal Vibrations (400 - 1499 cm-1)": []
         }
         
         for i in range(5, len(smooth_abs) - 5):
@@ -76,39 +78,90 @@ if uploaded_image is not None:
                 abs_val = round(smooth_abs[i], 2)
                 
                 if 3200 <= wn_val <= 3650:
-                    batches["Hydroxyl / Bound Water Region (3200 - 3650 cm⁻¹)"].append((wn_val, abs_val))
+                    batches["Hydroxyl / Bound Water Region (3200 - 3650 cm-1)"].append((wn_val, abs_val))
                 elif 2840 <= wn_val <= 3000:
-                    batches["Aliphatic C-H Backbone stretching Region (2840 - 3000 cm⁻¹)"].append((wn_val, abs_val))
+                    batches["Aliphatic C-H Backbone stretching Region (2840 - 3000 cm-1)"].append((wn_val, abs_val))
                 elif 1690 <= wn_val <= 1750:
-                    batches["Carbonyl Double-Bond Formations (1690 - 1750 cm⁻¹)"].append((wn_val, abs_val))
+                    batches["Carbonyl Double-Bond Formations (1690 - 1750 cm-1)"].append((wn_val, abs_val))
                 elif 1530 <= wn_val <= 1689:
-                    batches["Amide I & II Polymer Coupling Tracks (1530 - 1689 cm⁻¹)"].append((wn_val, abs_val))
+                    batches["Amide I & II Polymer Coupling Tracks (1530 - 1689 cm-1)"].append((wn_val, abs_val))
                 elif wn_val < 1500:
-                    batches["Fingerprint Matrix Skeletal Vibrations (400 - 1499 cm⁻¹)"].append((wn_val, abs_val))
+                    batches["Fingerprint Matrix Skeletal Vibrations (400 - 1499 cm-1)"].append((wn_val, abs_val))
 
+        report_text_lines = []
         has_peaks = False
+        
         for batch_name, peaks in batches.items():
             if len(peaks) > 0:
                 has_peaks = True
                 unique_peaks = sorted(list(set(peaks)), key=lambda x: x[0], reverse=True)[:5]
-                st.markdown(f"### 🗂 {batch_name}")
-                peak_list_text = "  |  ".join([f"**{wn} cm⁻¹** (Absorbance: {val})" for wn, val in unique_peaks])
+                st.markdown(f"### 🗂️ {batch_name}")
+                # Replaced special sub-script formatting here too
+                peak_list_text = "  |  ".join([f"{wn} cm-1 (Absorbance: {val})" for wn, val in unique_peaks])
                 st.info(f"📍 **Registered Peaks in this Batch:** {peak_list_text}")
                 
+                expr_text = ""
                 if "Hydroxyl" in batch_name:
-                    st.write("**🧬 Molecular Expression:** These high-frequency photon absorptions indicate intermolecular hydrogen bonding dynamics. The wide profile typically signifies stretching modulations of O-H networks or structural water clusters bound within the material layer.")
+                    expr_text = "Molecular Expression: These high-frequency photon absorptions indicate intermolecular hydrogen bonding dynamics. The wide profile typically signifies stretching modulations of O-H networks or structural water clusters bound within the material layer."
                 elif "Aliphatic" in batch_name:
-                    st.write("**🧬 Molecular Expression:** This batch captures the structural core of organic molecules. These symmetric and asymmetric vibrations outline the stretching transitions of saturated aliphatic $CH_2$ and $CH_3$ carbon frames composing the polymer backbone.")
+                    expr_text = "Molecular Expression: This batch captures the structural core of organic molecules. These symmetric and asymmetric vibrations outline the stretching transitions of saturated aliphatic CH2 and CH3 carbon frames composing the polymer backbone."
                 elif "Carbonyl" in batch_name:
-                    st.write("**🧬 Molecular Expression:** These highly energetic peaks express a very strong changing dipole moment native to a structural $C=O$ double bond. It indicates the presence of ester, ketone, or carboxylic acid distributions inside the matrix.")
+                    expr_text = "Molecular Expression: These highly energetic peaks express a very strong changing dipole moment native to a structural C=O double bond. It indicates the presence of ester, ketone, or carboxylic acid distributions inside the matrix."
                 elif "Amide" in batch_name:
-                    st.write("**🧬 Molecular Expression:** This indicates heavily coupled nitrogenous configurations. Strong bands tracing here characterize structural Amide I (carbonyl stretching) and Amide II (in-plane N-H bending) coordination networks, typical of complex polyamide engineering composites.")
+                    expr_text = "Molecular Expression: This indicates heavily coupled nitrogenous configurations. Strong bands tracing here characterize structural Amide I (carbonyl stretching) and Amide II (in-plane N-H bending) coordination networks, typical of complex polyamide engineering composites."
                 elif "Fingerprint" in batch_name:
-                    st.write("**🧬 Molecular Expression:** This hyper-dense collection marks the macro-structural skeletal fingerprint of the compound. The complex layout of positions represents localized bending, rocking, and twisting modes of single-bond $C-O$, $C-C$, and $C-N$ connections unique to this specific material recipe.")
+                    expr_text = "Molecular Expression: This hyper-dense collection marks the macro-structural skeletal fingerprint of the compound. The complex layout of positions represents localized bending, rocking, and twisting modes of single-bond C-O, C-C, and C-N connections unique to this specific material recipe."
+                
+                st.write(f"**{expr_text}**")
+                report_text_lines.append((batch_name, peak_list_text, expr_text))
                 st.markdown("---")
 
-        # --- CHART SHIFTED TO THE BOTTOM ---
         st.subheader("📈 Reconstructed Absorbance Coordinate Array")
         st.line_chart(data=extracted_df, x="wavenumber", y="absorbance")
+        
+        # --- PDF GENERATOR HUB ---
+        def generate_populated_ftir_pdf(data_lines):
+            pdf = FPDF()
+            pdf.add_page()
+            
+            pdf.set_font("Helvetica", "B", 18)
+            pdf.cell(0, 15, "Applied Chaos & Caffeinated Engineering", align="C", new_x="LMARGIN", new_y="NEXT")
+            pdf.set_font("Helvetica", "I", 12)
+            pdf.cell(0, 10, "Official FTIR Analytical Verification Report", align="C", new_x="LMARGIN", new_y="NEXT")
+            pdf.line(10, 40, 200, 40)
+            pdf.ln(15)
+            
+            pdf.set_font("Helvetica", "B", 14)
+            pdf.cell(0, 10, "1. Automated Spectroscopic Interpretation Record", new_x="LMARGIN", new_y="NEXT")
+            pdf.ln(2)
+            
+            for title, points, description in data_lines:
+                pdf.set_font("Helvetica", "B", 11)
+                pdf.cell(0, 7, f"Group: {title}", new_x="LMARGIN", new_y="NEXT")
+                pdf.set_font("Helvetica", "I", 10)
+                pdf.cell(0, 6, f"Extracted Peak Array: {points}", new_x="LMARGIN", new_y="NEXT")
+                pdf.set_font("Helvetica", "", 10)
+                pdf.multi_cell(0, 6, description)
+                pdf.ln(4)
+                
+            pdf.ln(5)
+            pdf.set_font("Helvetica", "B", 12)
+            pdf.cell(0, 8, "2. Operational Verification Sign-Off", new_x="LMARGIN", new_y="NEXT")
+            pdf.set_font("Helvetica", "", 11)
+            pdf.cell(0, 8, "- Primary Investigator: Jannatul Ferdous Sujana", new_x="LMARGIN", new_y="NEXT")
+            pdf.cell(0, 8, "- Authentication Status: COMPUTATIONALLY VALIDATED AND COMPILED", new_x="LMARGIN", new_y="NEXT")
+            
+            return pdf.output()
+
+        if has_peaks:
+            pdf_out = generate_populated_ftir_pdf(report_text_lines)
+            pdf_bytes = bytes(pdf_out)
+            
+            st.download_button(
+                label="📥 Download Processed FTIR Analysis Report (PDF)",
+                data=pdf_bytes,
+                file_name="ftir_processed_analysis_report.pdf",
+                mime="application/pdf"
+            )
 else:
     st.info("💡 Ready. Drop a clean screenshot of an FTIR graph in to run advanced computer vision diagnostics.")
