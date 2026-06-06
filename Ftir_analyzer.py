@@ -4,7 +4,9 @@ import numpy as np
 import pandas as pd
 from fpdf import FPDF
 
-# Text-safe, structured sub-module definition
+st.title("🔬 Advanced FTIR Spectral Digitizer & Molecular Interpreter")
+st.write("Extract precise optical data from visual infrared spectra and generate streamlined structural diagnostics.")
+
 uploaded_image = st.file_uploader("📂 Upload FTIR Graph Image (.png, .jpg, .jpeg, .webp)", type=["png", "jpg", "jpeg", "webp"])
 
 if uploaded_image is not None:
@@ -61,7 +63,6 @@ if uploaded_image is not None:
 
         st.subheader("🔍 Identified Absorptivity Peaks & Structural Signatures")
         
-        # Safe character text arrays for PDF injection
         batches = {
             "Hydroxyl / Bound Water Region (3200 - 3650 cm-1)": [],
             "Aliphatic C-H Backbone stretching Region (2840 - 3000 cm-1)": [],
@@ -113,52 +114,60 @@ if uploaded_image is not None:
                 report_text_lines.append((batch_name, peak_list_text, expr_text))
                 st.markdown("---")
 
-        # Visual layout rendering sequence
         st.subheader("📈 Reconstructed Absorbance Coordinate Array")
         st.line_chart(data=extracted_df, x="wavenumber", y="absorbance")
         
-        def generate_populated_ftir_pdf(data_lines):
+        # --- SEPARATE DEDICATED BUTTONS SECTION ---
+        st.markdown("### 📥 Export Instrumentation Analysis Records")
+        
+        # Button 1: Quick Sheet
+        def generate_quick_ftir_pdf(data_lines):
             pdf = FPDF()
             pdf.add_page()
-            
+            pdf.set_font("Helvetica", "B", 16)
+            pdf.cell(0, 12, "FTIR Spectral Run Record", align="C", new_x="LMARGIN", new_y="NEXT")
+            pdf.set_font("Helvetica", "", 10)
+            pdf.ln(5)
+            for title, points, _ in data_lines:
+                pdf.cell(0, 6, f"- {title}: {points}", new_x="LMARGIN", new_y="NEXT")
+            return pdf.output()
+
+        # Button 2: Detailed Understanding Report
+        def generate_detailed_ftir_pdf(data_lines):
+            pdf = FPDF()
+            pdf.add_page()
             pdf.set_font("Helvetica", "B", 18)
             pdf.cell(0, 15, "Applied Chaos and Caffeinated Engineering", align="C", new_x="LMARGIN", new_y="NEXT")
             pdf.set_font("Helvetica", "I", 12)
-            pdf.cell(0, 10, "Official FTIR Analytical Verification Report", align="C", new_x="LMARGIN", new_y="NEXT")
+            pdf.cell(0, 10, "Comprehensive FTIR Spectroscopic Evaluation Report", align="C", new_x="LMARGIN", new_y="NEXT")
             pdf.line(10, 40, 200, 40)
-            pdf.ln(15)
+            pdf.ln(12)
             
             pdf.set_font("Helvetica", "B", 14)
-            pdf.cell(0, 10, "1. Automated Spectroscopic Interpretation Record", new_x="LMARGIN", new_y="NEXT")
-            pdf.ln(2)
+            pdf.cell(0, 10, "1. Executive Optical Matrix Diagnostic Summary", new_x="LMARGIN", new_y="NEXT")
+            pdf.set_font("Helvetica", "", 11)
+            pdf.multi_cell(0, 6, "This comprehensive document logs the computational extraction of continuous infrared absorbency waves. The sub-pixel tracking filters isolated baseline variations to translate quantum particle oscillations directly into formal analytical diagnostic bands.")
+            pdf.ln(5)
             
+            pdf.set_font("Helvetica", "B", 14)
+            pdf.cell(0, 10, "2. Deep Molecular Transition Breakdown", new_x="LMARGIN", new_y="NEXT")
             for title, points, description in data_lines:
                 pdf.set_font("Helvetica", "B", 11)
-                pdf.cell(0, 7, f"Group: {title}", new_x="LMARGIN", new_y="NEXT")
+                pdf.cell(0, 7, f"Corridor Cluster: {title}", new_x="LMARGIN", new_y="NEXT")
                 pdf.set_font("Helvetica", "I", 10)
-                pdf.cell(0, 6, f"Extracted Peak Array: {points}", new_x="LMARGIN", new_y="NEXT")
+                pdf.cell(0, 6, f"Extracted Peaks: {points}", new_x="LMARGIN", new_y="NEXT")
                 pdf.set_font("Helvetica", "", 10)
                 pdf.multi_cell(0, 6, description)
                 pdf.ln(4)
-                
-            pdf.ln(5)
-            pdf.set_font("Helvetica", "B", 12)
-            pdf.cell(0, 8, "2. Operational Verification Sign-Off", new_x="LMARGIN", new_y="NEXT")
-            pdf.set_font("Helvetica", "", 11)
-            pdf.cell(0, 8, "- Primary Investigator: Jannatul Ferdous Sujana", new_x="LMARGIN", new_y="NEXT")
-            pdf.cell(0, 8, "- Authentication Status: COMPUTATIONALLY VALIDATED AND COMPILED", new_x="LMARGIN", new_y="NEXT")
-            
             return pdf.output()
 
         if has_peaks:
-            pdf_out = generate_populated_ftir_pdf(report_text_lines)
-            pdf_bytes = bytes(pdf_out)
-            
-            st.download_button(
-                label="📥 Download Full Processed FTIR Analysis Report (PDF)",
-                data=pdf_bytes,
-                file_name="ftir_processed_analysis_report.pdf",
-                mime="application/pdf"
-            )
+            c1, c2 = st.columns(2)
+            with c1:
+                pdf_quick = generate_quick_ftir_pdf(report_text_lines)
+                st.download_button(label="📄 Download Quick Data Sheet (PDF)", data=bytes(pdf_quick), file_name="ftir_quick_data.pdf", mime="application/pdf")
+            with c2:
+                pdf_detailed = generate_detailed_ftir_pdf(report_text_lines)
+                st.download_button(label="📘 Download Detailed Understanding Report (PDF)", data=bytes(pdf_detailed), file_name="ftir_comprehensive_report.pdf", mime="application/pdf")
 else:
     st.info("💡 Ready. Drop a clean screenshot of an FTIR graph in to run advanced computer vision diagnostics.")
