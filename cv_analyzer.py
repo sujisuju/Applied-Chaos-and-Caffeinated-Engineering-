@@ -26,7 +26,7 @@ if uploaded_file is not None:
         crop_left = st.sidebar.slider("Crop Left Margin", 0, 50, 12)
         crop_right = st.sidebar.slider("Crop Right Margin", 0, 50, 6)
         crop_top = st.sidebar.slider("Crop Top Margin", 0, 50, 6)
-        crop_bottom = st.sidebar.slider("Crop Bottom Margin", 0, 50, 12)
+        crop_bottom = st.sidebar.slider("Crop Bottom Margin", 0, 100, 12)
         line_threshold = st.sidebar.slider("Curve Track Sensitivity", 5, 255, 110)
         
         st.sidebar.subheader("🔌 Voltage Scale Calibration")
@@ -111,7 +111,7 @@ if uploaded_file is not None:
 
             st.markdown("### 📥 Export Instrumentation Analysis Records")
 
-            # FIXED QUICK SHEET: Swapped .cell for .multi_cell to enforce auto-wrapping
+            # FIXED: Added explicit 190mm width constraints to lock formatting alignment
             def generate_quick_cv_pdf(data_lines):
                 pdf = FPDF()
                 pdf.add_page()
@@ -123,7 +123,7 @@ if uploaded_file is not None:
                     pdf.set_font("Helvetica", "B", 11)
                     pdf.cell(0, 6, f"# {title}", new_x="LMARGIN", new_y="NEXT")
                     pdf.set_font("Helvetica", "", 10)
-                    pdf.multi_cell(0, 5, f"Data Vector Matrix: {points}")
+                    pdf.multi_cell(190, 5, f"Data Vector Matrix: {points}", new_x="LMARGIN", new_y="NEXT")
                     pdf.ln(3)
                 return pdf.output()
 
@@ -140,7 +140,7 @@ if uploaded_file is not None:
                 pdf.set_font("Helvetica", "B", 14)
                 pdf.cell(0, 10, "1. Executive Faradaic Matrix Diagnostic Summary", new_x="LMARGIN", new_y="NEXT")
                 pdf.set_font("Helvetica", "", 11)
-                pdf.multi_cell(0, 6, "This official report certifies the mathematical extraction of reversible electron transfer loops. The digital peak-filtering array isolates oxidation-reduction current densities, allowing rigorous validation of diffusion mechanics and boundary layer kinetics.")
+                pdf.multi_cell(190, 6, "This official report certifies the mathematical extraction of reversible electron transfer loops. The digital peak-filtering array isolates oxidation-reduction current densities, allowing rigorous validation of diffusion mechanics and boundary layer kinetics.", new_x="LMARGIN", new_y="NEXT")
                 pdf.ln(5)
                 
                 pdf.set_font("Helvetica", "B", 14)
@@ -149,9 +149,9 @@ if uploaded_file is not None:
                     pdf.set_font("Helvetica", "B", 11)
                     pdf.cell(0, 7, f"Sweep Phase: {title}", new_x="LMARGIN", new_y="NEXT")
                     pdf.set_font("Helvetica", "I", 10)
-                    pdf.multi_cell(0, 5, f"Extracted Potential Vertices: {points}")
+                    pdf.multi_cell(190, 5, f"Extracted Potential Vertices: {points}", new_x="LMARGIN", new_y="NEXT")
                     pdf.set_font("Helvetica", "", 10)
-                    pdf.multi_cell(0, 6, description)
+                    pdf.multi_cell(190, 6, description, new_x="LMARGIN", new_y="NEXT")
                     pdf.ln(4)
                 return pdf.output()
 
