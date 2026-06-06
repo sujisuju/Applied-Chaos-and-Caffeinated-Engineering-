@@ -7,7 +7,7 @@ from fpdf import FPDF
 st.title("🧪 Advanced GCMS Chromatogram Digitizer & Interpreter")
 st.write("Extract numerical data arrays from visual chromatograms and generate formal structural logs.")
 
-# FIXED: Changed st.gc_uploader to st.file_uploader and aligned variable names
+# Expanded file uploader string matrix to accept all variations
 uploaded_file = st.file_uploader(
     "📂 Upload GCMS Graph (PNG, JPG, JPEG, WEBP, PDF)", 
     type=["png", "jpg", "jpeg", "webp", "pdf", "PNG", "JPG", "JPEG", "WEBP", "PDF"]
@@ -116,7 +116,7 @@ if uploaded_file is not None:
 
             st.markdown("### 📥 Export Instrumentation Analysis Records")
 
-            # FIXED QUICK SHEET: Shifted to multi_cell array wrappers to handle text-wrapping safety boundaries
+            # FIXED: Forced explicit 190mm width limits and text routing rules across the document compiler
             def generate_quick_gc_pdf(data_lines):
                 pdf = FPDF()
                 pdf.add_page()
@@ -128,7 +128,7 @@ if uploaded_file is not None:
                     pdf.set_font("Helvetica", "B", 11)
                     pdf.cell(0, 6, f"# {title}", new_x="LMARGIN", new_y="NEXT")
                     pdf.set_font("Helvetica", "", 10)
-                    pdf.multi_cell(0, 5, f"Data Vector Matrix: {points}")
+                    pdf.multi_cell(190, 5, f"Data Vector Matrix: {points}", new_x="LMARGIN", new_y="NEXT")
                     pdf.ln(3)
                 return pdf.output()
 
@@ -145,7 +145,7 @@ if uploaded_file is not None:
                 pdf.set_font("Helvetica", "B", 14)
                 pdf.cell(0, 10, "1. Executive Chromatographic Metric Summary", new_x="LMARGIN", new_y="NEXT")
                 pdf.set_font("Helvetica", "", 11)
-                pdf.multi_cell(0, 6, "This official record compiles the retention index timelines extracted via matrix edge threshold profiles. Component shifts isolate compound identities, verifying fraction purity grades against structural reference thresholds.")
+                pdf.multi_cell(190, 6, "This official record compiles the retention index timelines extracted via matrix edge threshold profiles. Component shifts isolate compound identities, verifying fraction purity grades against structural reference thresholds.", new_x="LMARGIN", new_y="NEXT")
                 pdf.ln(5)
                 
                 pdf.set_font("Helvetica", "B", 14)
@@ -154,9 +154,9 @@ if uploaded_file is not None:
                     pdf.set_font("Helvetica", "B", 11)
                     pdf.cell(0, 7, f"Elution Phase: {title}", new_x="LMARGIN", new_y="NEXT")
                     pdf.set_font("Helvetica", "I", 10)
-                    pdf.multi_cell(0, 5, f"Extracted Peaks: {points}")
+                    pdf.multi_cell(190, 5, f"Extracted Peaks: {points}", new_x="LMARGIN", new_y="NEXT")
                     pdf.set_font("Helvetica", "", 10)
-                    pdf.multi_cell(0, 6, description)
+                    pdf.multi_cell(190, 6, description, new_x="LMARGIN", new_y="NEXT")
                     pdf.ln(4)
                 return pdf.output()
 
