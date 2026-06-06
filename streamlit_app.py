@@ -146,4 +146,4 @@ with tab_cv:
 # 🧪 TAB 4: GCMS GATEWAY
 # ==========================================
 with tab_gcms:
-    exec(open("gcms_analyzer.py").read())
+    exec(open("Gcms_analyzer.py").read())
