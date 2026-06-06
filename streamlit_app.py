@@ -1,11 +1,11 @@
 import streamlit as st
+from fpdf import FPDF
 
 st.set_page_config(page_title="Ultimate Materials Suite", layout="wide")
 
-# --- MASTER CSS: FIXED SYNTAX & CHEMISTRY DESIGN THEME ---
+# --- MASTER CSS: DESIGN PLAYGROUND ---
 st.markdown("""
     <style>
-    /* Main Landing Page Hero Banner */
     .hero-container {
         background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
         padding: 45px;
@@ -16,8 +16,6 @@ st.markdown("""
         position: relative;
         overflow: hidden;
     }
-    
-    /* Canva-Style Decorative Chemistry Floating Badges */
     .lab-badge {
         position: absolute;
         right: 40px;
@@ -25,47 +23,27 @@ st.markdown("""
         font-size: 70px;
         opacity: 0.25;
     }
-    
     .hero-title {
         color: #f8fafc;
         font-size: 42px;
         font-weight: 700;
         margin-bottom: 12px;
     }
-    .hero-title span {
-        color: #deff9a;
-    }
-    .hero-subtitle {
-        color: #cbd5e1;
-        font-size: 20px;
-    }
+    .hero-title span { color: #deff9a; }
+    .hero-subtitle { color: #cbd5e1; font-size: 20px; }
     
-    /* Dynamic Lab Feature Grid Cards */
     .feature-card {
         background-color: #111827;
         padding: 30px;
         border-radius: 18px;
         border: 1px solid #1e293b;
         height: 100%;
-        box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1);
     }
-    .card-icon {
-        font-size: 38px;
-        margin-bottom: 12px;
-    }
-    .card-title {
-        color: #deff9a;
-        font-size: 24px;
-        font-weight: 600;
-        margin-bottom: 12px;
-    }
-    .card-desc {
-        color: #94a3b8;
-        font-size: 15px;
-        line-height: 1.6;
-    }
+    .card-icon { font-size: 38px; margin-bottom: 12px; }
+    .card-title { color: #deff9a; font-size: 24px; font-weight: 600; margin-bottom: 12px; }
+    .card-desc { color: #94a3b8; font-size: 15px; line-height: 1.6; }
     </style>
-    """, unsafe_allow_html=True) # <-- TYPO FIXED HERE!
+    """, unsafe_allow_html=True)
 
 # --- TOP NAVIGATION TABS ---
 tab_home, tab_ftir, tab_cv, tab_gcms = st.tabs([
@@ -76,74 +54,74 @@ tab_home, tab_ftir, tab_cv, tab_gcms = st.tabs([
 ])
 
 # ==========================================
-# 🏠 TAB 1: STYLIZED CHEMISTRY HOME LAYOUT
+# 🏠 TAB 1: HOME LAYOUT & REPORT GENERATOR
 # ==========================================
 with tab_home:
-    # Stylized Hero Block with Floating Chemistry Graphics
     st.markdown("""
         <div class="hero-container">
-            <div class="lab-badge">🧪🧪</div>
+            <div class="lab-badge">⚗️🧪</div>
             <div class="hero-title">Welcome to <span>Applied Chaos & Caffeinated Engineering</span></div>
             <div class="hero-subtitle">The Unified Materials, Energy Storage, and Spectroscopic Digitization Platform</div>
         </div>
         """, unsafe_allow_html=True)
     
-    st.write("Select any of the specialized analytical modules above from the top tabs to begin processing your laboratory graph captures.")
+    st.write("Select an analytical module from the top tabs to process your graph captures.")
     st.markdown("---")
     
-    # 3-Column Visual Feature Grid Layout
     col1, col2, col3 = st.columns(3)
-    
     with col1:
-        st.markdown("""
-            <div class="feature-card">
-                <div class="card-icon">🔮</div>
-                <div class="card-title">FTIR Optical Suite</div>
-                <div class="card-desc">
-                    Leverages computer vision matrix thresholding to isolate infrared baseline curves, 
-                    reconstructing physical absorbance data points from flat screenshots.
-                </div>
-            </div>
-            """, unsafe_allow_html=True)
-            
+        st.markdown('<div class="feature-card"><div class="card-icon">🔮</div><div class="card-title">FTIR Optical Suite</div><div class="card-desc">Isolates infrared baseline curves to reconstruct physical absorbance arrays from flat screenshots.</div></div>', unsafe_allow_html=True)
     with col2:
-        st.markdown("""
-            <div class="feature-card">
-                <div class="card-icon">⚗️</div>
-                <div class="card-title">Voltammetry Sweep Engine</div>
-                <div class="card-desc">
-                    Maps dynamic faradaic redox curves to calculate potential intervals, isolating 
-                    anodic and cathodic sweep interactions directly from instrument captures.
-                </div>
-            </div>
-            """, unsafe_allow_html=True)
-            
+        st.markdown('<div class="feature-card"><div class="card-icon">⚗️</div><div class="card-title">Voltammetry Sweep Engine</div><div class="card-desc">Maps dynamic redox curves to track faradaic oxidation and reduction spikes directly from captures.</div></div>', unsafe_allow_html=True)
     with col3:
-        st.markdown("""
-            <div class="feature-card">
-                <div class="card-icon">🧪</div>
-                <div class="card-title">GCMS Resolution Hub</div>
-                <div class="card-desc">
-                    Groups chromatogram retention intervals into descriptive batch zones, evaluating 
-                    solvent purity, degradation traces, and macro-structural signatures.
-                </div>
-            </div>
-            """, unsafe_allow_html=True)
+        st.markdown('<div class="feature-card"><div class="card-icon">🧪</div><div class="card-title">GCMS Resolution Hub</div><div class="card-desc">Groups chromatogram retention segments into detailed diagnostic zone summaries.</div></div>', unsafe_allow_html=True)
+
+    st.markdown("---")
+    st.subheader("📑 Export Blank Laboratory Report Templates")
+    st.write("Need a professional record for your lab notebook? Generate a clean, formal PDF log frame instantly below:")
+
+    # PDF generation script using fpdf2
+    def generate_pdf_report():
+        pdf = FPDF()
+        pdf.add_page()
+        pdf.set_font("Helvetica", "B", 18)
+        pdf.cell(0, 15, "Applied Chaos & Caffeinated Engineering", ln=True, align="C")
+        pdf.set_font("Helvetica", "I", 12)
+        pdf.cell(0, 10, "Official Laboratory Analytical Verification Report", ln=True, align="C")
+        pdf.line(10, 40, 200, 40)
+        pdf.ln(15)
+        
+        pdf.set_font("Helvetica", "B", 14)
+        pdf.cell(0, 10, "1. Executive Material Diagnostics Summary", ln=True)
+        pdf.set_font("Helvetica", "", 11)
+        pdf.multi_cell(0, 7, "This document certifies the computational data array reconstruction from visual graphical instrumentation sources. The digitization matrix successfully extracted the sub-pixel tracking vectors to map localized spectroscopic maxima and thermodynamic peak trends.")
+        pdf.ln(10)
+        
+        pdf.set_font("Helvetica", "B", 14)
+        pdf.cell(0, 10, "2. Operational Parameters & Verification Sign-Off", ln=True)
+        pdf.set_font("Helvetica", "", 11)
+        pdf.cell(0, 8, "• Primary Investigator Signature: _______________________", ln=True)
+        pdf.cell(0, 8, "• Departmental Authentication Status: PENDING RUN VERIFICATION", ln=True)
+        
+        return pdf.output()
+
+    pdf_data = generate_pdf_report()
+    
+    st.download_button(
+        label="📥 Download Laboratory Report Sheet (PDF)",
+        data=pdf_data,
+        file_name="materials_suite_lab_report.pdf",
+        mime="application/pdf"
+    )
 
 # ==========================================
-# 📊 TAB 2: FTIR ANALYZER GATEWAY
+# 📊 SUB-MODULE TAB EXTENSIONS
 # ==========================================
 with tab_ftir:
     exec(open("Ftir_analyzer.py").read())
 
-# ==========================================
-# ⚡ TAB 3: VOLTAMMETRY GATEWAY
-# ==========================================
 with tab_cv:
     exec(open("cv_analyzer.py").read())
 
-# ==========================================
-# 🧪 TAB 4: GCMS GATEWAY
-# ==========================================
 with tab_gcms:
-    exec(open("Gcms_analyzer.py").read())
+    exec(open("gcms_analyzer.py").read())
