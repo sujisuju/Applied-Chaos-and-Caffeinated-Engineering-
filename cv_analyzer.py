@@ -153,6 +153,6 @@ if uploaded_image is not None:
                 st.download_button(label="📄 Download Quick Data Sheet (PDF)", data=bytes(pdf_quick), file_name="cv_quick_data.pdf", mime="application/pdf")
             with c2:
                 pdf_detailed = generate_detailed_cv_pdf(report_text_lines)
-                st.download_button(label="📘 Download Detailed Understanding Report (PDF)", data=bytes(pdf_detailed), file_name="cv_comprehensive_report.pdf", mime="application/pdf")
+                st.download_button(label="📘 Download Report (PDF)", data=bytes(pdf_detailed), file_name="cv_comprehensive_report.pdf", mime="application/pdf")
 else:
     st.info("💡 Ready. Upload a voltammetry screenshot to extract redox data structures.")
