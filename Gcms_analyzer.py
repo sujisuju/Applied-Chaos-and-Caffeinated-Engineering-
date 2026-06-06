@@ -8,7 +8,7 @@ st.title("🧪 Advanced GCMS Chromatogram Digitizer & Interpreter")
 st.write("Extract numerical data arrays from visual chromatograms and generate formal structural logs.")
 
 # Expanded file uploader string matrix to accept all variations
-uploaded_file = st.gcms_uploader(
+uploaded_file = st.gc_uploader(
     "📂 Upload GCMS Graph (PNG, JPG, JPEG, WEBP, PDF)", 
     type=["png", "jpg", "jpeg", "webp", "pdf", "PNG", "JPG", "JPEG", "WEBP", "PDF"]
 )
