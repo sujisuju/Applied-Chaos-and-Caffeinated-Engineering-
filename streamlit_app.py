@@ -61,7 +61,7 @@ with tab_home:
         <div class="hero-container">
             <div class="lab-badge">⚗️🧪</div>
             <div class="hero-title">Welcome to <span>Applied Chaos & Caffeinated Engineering</span></div>
-        
+            <div class="hero-subtitle">The Unified Materials, Energy Storage, and Spectroscopic Digitization Platform</div>
         </div>
         """, unsafe_allow_html=True)
     
@@ -80,37 +80,42 @@ with tab_home:
     st.subheader("📑 Export Blank Laboratory Report Templates")
     st.write("Need a professional record for your lab notebook? Generate a clean, formal PDF log frame instantly below:")
 
-    # PDF generation script using fpdf2
     def generate_pdf_report():
         pdf = FPDF()
         pdf.add_page()
+        
+        # Header block
         pdf.set_font("Helvetica", "B", 18)
-        pdf.cell(0, 15, "Applied Chaos & Caffeinated Engineering", ln=True, align="C")
+        pdf.cell(0, 15, "Applied Chaos & Caffeinated Engineering", align="C", new_x="LMARGIN", new_y="NEXT")
         pdf.set_font("Helvetica", "I", 12)
-        pdf.cell(0, 10, "Official Laboratory Analytical Verification Report", ln=True, align="C")
+        pdf.cell(0, 10, "Official Laboratory Analytical Verification Report", align="C", new_x="LMARGIN", new_y="NEXT")
         pdf.line(10, 40, 200, 40)
         pdf.ln(15)
         
+        # Section 1
         pdf.set_font("Helvetica", "B", 14)
-        pdf.cell(0, 10, "1. Executive Material Diagnostics Summary", ln=True)
+        pdf.cell(0, 10, "1. Executive Material Diagnostics Summary", new_x="LMARGIN", new_y="NEXT")
         pdf.set_font("Helvetica", "", 11)
         pdf.multi_cell(0, 7, "This document certifies the computational data array reconstruction from visual graphical instrumentation sources. The digitization matrix successfully extracted the sub-pixel tracking vectors to map localized spectroscopic maxima and thermodynamic peak trends.")
         pdf.ln(10)
         
+        # Section 2 (Clean non-latin characters removed!)
         pdf.set_font("Helvetica", "B", 14)
-        pdf.set_font("Helvetica", "B", 14)
-        pdf.cell(0, 10, "2. Operational Parameters & Verification Sign-Off", ln=True)
+        pdf.cell(0, 10, "2. Operational Parameters & Verification Sign-Off", new_x="LMARGIN", new_y="NEXT")
         pdf.set_font("Helvetica", "", 11)
-        pdf.cell(0, 8, "- Primary Investigator Signature: _______________________", ln=True)
-        pdf.cell(0, 8, "- Departmental Authentication Status: PENDING RUN VERIFICATION", ln=True)
+        pdf.cell(0, 8, "- Primary Investigator Signature: _______________________", new_x="LMARGIN", new_y="NEXT")
+        pdf.cell(0, 8, "- Departmental Authentication Status: PENDING RUN VERIFICATION", new_x="LMARGIN", new_y="NEXT")
         
+        # Output as a safe Latin-1 string configuration string
         return pdf.output()
 
-    pdf_data = generate_pdf_report()
+    # Create report and turn it into clean streamable bytes
+    pdf_string = generate_pdf_report()
+    pdf_bytes = bytes(pdf_string)
     
     st.download_button(
         label="📥 Download Laboratory Report Sheet (PDF)",
-        data=pdf_data,
+        data=pdf_bytes,
         file_name="materials_suite_lab_report.pdf",
         mime="application/pdf"
     )
