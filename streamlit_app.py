@@ -80,46 +80,56 @@ with tab_home:
     st.subheader("📑 Export Blank Laboratory Report Templates")
     st.write("Need a professional record for your lab notebook? Generate a clean, formal PDF log frame instantly below:")
 
-    def generate_pdf_report():
-        pdf = FPDF()
-        pdf.add_page()
-        
-        # Header block
-        pdf.set_font("Helvetica", "B", 18)
-        pdf.cell(0, 15, "Applied Chaos & Caffeinated Engineering", align="C", new_x="LMARGIN", new_y="NEXT")
-        pdf.set_font("Helvetica", "I", 12)
-        pdf.cell(0, 10, "Official Laboratory Analytical Verification Report", align="C", new_x="LMARGIN", new_y="NEXT")
-        pdf.line(10, 40, 200, 40)
-        pdf.ln(15)
-        
-        # Section 1
-        pdf.set_font("Helvetica", "B", 14)
-        pdf.cell(0, 10, "1. Executive Material Diagnostics Summary", new_x="LMARGIN", new_y="NEXT")
-        pdf.set_font("Helvetica", "", 11)
-        pdf.multi_cell(0, 7, "This document certifies the computational data array reconstruction from visual graphical instrumentation sources. The digitization matrix successfully extracted the sub-pixel tracking vectors to map localized spectroscopic maxima and thermodynamic peak trends.")
-        pdf.ln(10)
-        
-        # Section 2 (Clean non-latin characters removed!)
-        pdf.set_font("Helvetica", "B", 14)
-        pdf.cell(0, 10, "2. Operational Parameters & Verification Sign-Off", new_x="LMARGIN", new_y="NEXT")
-        pdf.set_font("Helvetica", "", 11)
-        pdf.cell(0, 8, "- Primary Investigator Signature: _______________________", new_x="LMARGIN", new_y="NEXT")
-        pdf.cell(0, 8, "- Departmental Authentication Status: PENDING RUN VERIFICATION", new_x="LMARGIN", new_y="NEXT")
-        
-        # Output as a safe Latin-1 string configuration string
-        return pdf.output()
-
-    # Create report and turn it into clean streamable bytes
-    pdf_string = generate_pdf_report()
-    pdf_bytes = bytes(pdf_string)
+  def generate_pdf_report(ftir_peaks, cv_peaks, gcms_peaks):
+    pdf = FPDF()
+    pdf.add_page()
     
-    st.download_button(
-        label="📥 Download Laboratory Report Sheet (PDF)",
-        data=pdf_bytes,
-        file_name="materials_suite_lab_report.pdf",
-        mime="application/pdf"
-    )
-
+    # --- HEADER BLOCK ---
+    pdf.set_font("Helvetica", "B", 18)
+    pdf.cell(0, 12, "Applied Chaos & Caffeinated Engineering", align="C", new_x="LMARGIN", new_y="NEXT")
+    pdf.set_font("Helvetica", "I", 11)
+    pdf.cell(0, 8, "Official Laboratory Data Suite Verification Report", align="C", new_x="LMARGIN", new_y="NEXT")
+    pdf.line(10, 32, 200, 32)
+    pdf.ln(10)
+    
+    # --- SECTION 1: EXEC SUMMARY ---
+    pdf.set_font("Helvetica", "B", 14)
+    pdf.cell(0, 10, "1. Computational Data Reconstruction Summary", new_x="LMARGIN", new_y="NEXT")
+    pdf.set_font("Helvetica", "", 10)
+    pdf.multi_cell(0, 6, "This document certifies the computational data array reconstruction from visual graphical instrumentation sources. The digitization matrix successfully extracted sub-pixel tracking vectors to map localized spectroscopic maxima and thermodynamic peak patterns without manual processing bias.")
+    pdf.ln(5)
+    
+    # --- SECTION 2: FTIR PEAKS ---
+    pdf.set_font("Helvetica", "B", 13)
+    pdf.cell(0, 10, "2. Module I: Resolved FTIR Spectral Peaks", new_x="LMARGIN", new_y="NEXT")
+    pdf.set_font("Helvetica", "", 10)
+    for p in ftir_peaks:
+        pdf.cell(0, 6, f"- Peak at {p['Wavenumber (cm-1)']} cm-1 | Intensity: {p['Relative Intensity']} | Group: {p['Functional Group Class']}", new_x="LMARGIN", new_y="NEXT")
+    pdf.ln(5)
+    
+    # --- SECTION 3: CV SWEEP ---
+    pdf.set_font("Helvetica", "B", 13)
+    pdf.cell(0, 10, "3. Module II: Resolved Cyclic Voltammetry Intersections", new_x="LMARGIN", new_y="NEXT")
+    pdf.set_font("Helvetica", "", 10)
+    for p in cv_peaks:
+        pdf.cell(0, 6, f"- Sweep Point: {p['Potential (V)']} V | Relative Current Density: {p['Relative Intensity']}", new_x="LMARGIN", new_y="NEXT")
+    pdf.ln(5)
+    
+    # --- SECTION 4: GCMS REPORT ---
+    pdf.set_font("Helvetica", "B", 13)
+    pdf.cell(0, 10, "4. Module III: Resolved GCMS Chromatogram Components", new_x="LMARGIN", new_y="NEXT")
+    pdf.set_font("Helvetica", "", 10)
+    for p in gcms_peaks:
+        pdf.cell(0, 6, f"- Retention Time: {p['Retention Time (min)']} min | Abundance Height: {p['Relative Abundance Peak Height']}", new_x="LMARGIN", new_y="NEXT")
+    pdf.ln(10)
+    
+    # --- SIGN-OFF BLOCK ---
+    pdf.set_font("Helvetica", "B", 11)
+    pdf.cell(0, 6, "Name", new_x="LMARGIN", new_y="NEXT")
+    pdf.cell(0, 6, "Date", new_x="LMARGIN", new_y="NEXT")
+    
+    return pdf.output()
+      
 # ==========================================
 # 📊 SUB-MODULE TAB EXTENSIONS
 # ==========================================
