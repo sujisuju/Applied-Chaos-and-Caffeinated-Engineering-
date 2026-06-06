@@ -1,3 +1,4 @@
 pandas
 streamlit
 opencv-python-headless
+fpdf2
