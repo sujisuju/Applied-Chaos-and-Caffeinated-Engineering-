@@ -13,7 +13,7 @@ if uploaded_image is not None:
     img = cv2.imdecode(file_bytes, cv2.IMREAD_COLOR)
     h_img, w_img, _ = img.shape
 
-    # --- SIDEBAR TUNING CONTROLS ---
+    # --- SIDEBAR CONTROLS ---
     st.sidebar.header("🎛️ Optical Calibration")
     crop_left = st.sidebar.slider("Crop Left Margin", 0, 50, 10)
     crop_right = st.sidebar.slider("Crop Right Margin", 0, 50, 5)
@@ -39,6 +39,7 @@ if uploaded_image is not None:
     col1, col2 = st.columns(2)
     with col1:
         st.image(debug_img, caption="Active Scanning Zone (Green Box)", use_container_width=True)
+    with col2:
         st.image(thresh[y_start_px:y_end_px, x_start_px:x_end_px], caption="Isolated Infrared Trace Mask", use_container_width=True)
 
     scan_x, scan_y = [], []
@@ -56,33 +57,24 @@ if uploaded_image is not None:
         wavenumbers = wn_start + (np.array(scan_x) / scan_width) * (wn_end - wn_start)
         min_y, max_y = min(scan_y), max(scan_y)
         absorbance = (np.array(scan_y) - min_y) / (max_y - min_y) if max_y != min_y else np.zeros_like(scan_y)
-
         smooth_abs = pd.Series(absorbance).rolling(window=3, center=True).mean().fillna(0).values
         extracted_df = pd.DataFrame({"wavenumber": wavenumbers, "absorbance": smooth_abs})
 
-        with col2:
-            st.subheader("📈 Reconstructed Absorbance Coordinate Array")
-            st.line_chart(data=extracted_df, x="wavenumber", y="absorbance")
-
         st.subheader("🔍 Identified Absorptivity Peaks & Structural Signatures")
         
-        # Initialize dictionary buckets for grouping batches of peaks
         batches = {
             "Hydroxyl / Bound Water Region (3200 - 3650 cm⁻¹)": [],
-            "Amide / Amine N-H Coordination Region (3250 - 3400 cm⁻¹)": [],
             "Aliphatic C-H Backbone stretching Region (2840 - 3000 cm⁻¹)": [],
             "Carbonyl Double-Bond Formations (1690 - 1750 cm⁻¹)": [],
             "Amide I & II Polymer Coupling Tracks (1530 - 1689 cm⁻¹)": [],
             "Fingerprint Matrix Skeletal Vibrations (400 - 1499 cm⁻¹)": []
         }
         
-        # Local coordinate maxima check loop
         for i in range(5, len(smooth_abs) - 5):
             if smooth_abs[i] == max(smooth_abs[i-5:i+5]) and smooth_abs[i] > 0.12:
                 wn_val = round(wavenumbers[i], 1)
                 abs_val = round(smooth_abs[i], 2)
                 
-                # Direct peaks into their designated scientific batches
                 if 3200 <= wn_val <= 3650:
                     batches["Hydroxyl / Bound Water Region (3200 - 3650 cm⁻¹)"].append((wn_val, abs_val))
                 elif 2840 <= wn_val <= 3000:
@@ -94,39 +86,29 @@ if uploaded_image is not None:
                 elif wn_val < 1500:
                     batches["Fingerprint Matrix Skeletal Vibrations (400 - 1499 cm⁻¹)"].append((wn_val, abs_val))
 
-        # --- GENERATE SINGLE BATCH DESCRIPTIONS WITHOUT REPETITION ---
         has_peaks = False
-        
         for batch_name, peaks in batches.items():
             if len(peaks) > 0:
                 has_peaks = True
-                # Deduplicate peaks found tightly adjacent
                 unique_peaks = sorted(list(set(peaks)), key=lambda x: x[0], reverse=True)[:5]
-                
-                # 1. Create a clean list display of numbers for this batch
-                st.markdown(f"### 🗂️ {batch_name}")
+                st.markdown(f"### 🗂 {batch_name}")
                 peak_list_text = "  |  ".join([f"**{wn} cm⁻¹** (Absorbance: {val})" for wn, val in unique_peaks])
                 st.info(f"📍 **Registered Peaks in this Batch:** {peak_list_text}")
                 
-                # 2. Provide ONLY ONE deep scientific description tailored to that specific group
                 if "Hydroxyl" in batch_name:
                     st.write("**🧬 Molecular Expression:** These high-frequency photon absorptions indicate intermolecular hydrogen bonding dynamics. The wide profile typically signifies stretching modulations of O-H networks or structural water clusters bound within the material layer.")
-                
                 elif "Aliphatic" in batch_name:
                     st.write("**🧬 Molecular Expression:** This batch captures the structural core of organic molecules. These symmetric and asymmetric vibrations outline the stretching transitions of saturated aliphatic $CH_2$ and $CH_3$ carbon frames composing the polymer backbone.")
-                
                 elif "Carbonyl" in batch_name:
-                    st.write("**🧬 Molecular Expression:** These highly energetic peaks express a very strong changing dipole moment native to a structural $C=O$ double bond. It indicates presence of ester, ketone, or carboxylic acid distributions inside the matrix.")
-                
+                    st.write("**🧬 Molecular Expression:** These highly energetic peaks express a very strong changing dipole moment native to a structural $C=O$ double bond. It indicates the presence of ester, ketone, or carboxylic acid distributions inside the matrix.")
                 elif "Amide" in batch_name:
                     st.write("**🧬 Molecular Expression:** This indicates heavily coupled nitrogenous configurations. Strong bands tracing here characterize structural Amide I (carbonyl stretching) and Amide II (in-plane N-H bending) coordination networks, typical of complex polyamide engineering composites.")
-                
                 elif "Fingerprint" in batch_name:
                     st.write("**🧬 Molecular Expression:** This hyper-dense collection marks the macro-structural skeletal fingerprint of the compound. The complex layout of positions represents localized bending, rocking, and twisting modes of single-bond $C-O$, $C-C$, and $C-N$ connections unique to this specific material recipe.")
-                
                 st.markdown("---")
 
-        if not has_peaks:
-            st.info("💡 Adjust the tuning sliders on the left sidebar to change sensitivity and lock onto your spectrum curve.")
+        # --- CHART SHIFTED TO THE BOTTOM ---
+        st.subheader("📈 Reconstructed Absorbance Coordinate Array")
+        st.line_chart(data=extracted_df, x="wavenumber", y="absorbance")
 else:
     st.info("💡 Ready. Drop a clean screenshot of an FTIR graph in to run advanced computer vision diagnostics.")
