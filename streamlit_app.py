@@ -98,10 +98,11 @@ with tab_home:
         pdf.ln(10)
         
         pdf.set_font("Helvetica", "B", 14)
+        pdf.set_font("Helvetica", "B", 14)
         pdf.cell(0, 10, "2. Operational Parameters & Verification Sign-Off", ln=True)
+        pdf.set_font("Helvetica", "", 11)
         pdf.cell(0, 8, "- Primary Investigator Signature: _______________________", ln=True)
         pdf.cell(0, 8, "- Departmental Authentication Status: PENDING RUN VERIFICATION", ln=True)
-        pdf.cell(0, 8, "• Departmental Authentication Status: PENDING RUN VERIFICATION", ln=True)
         
         return pdf.output()
 
