@@ -2,10 +2,10 @@ import streamlit as st
 import cv2
 import numpy as np
 import pandas as pd
-from weasyprint import HTML
+from fpdf import FPDF
 
 st.title("🧪 Advanced GCMS Chromatogram Digitizer & Interpreter")
-st.write("Extract numerical data arrays from visual chromatograms and generate formal diagnostic reports.")
+st.write("Extract numerical data arrays from visual chromatograms and generate formal structural logs.")
 
 uploaded_image = st.file_uploader("📂 Upload GCMS Graph Image (.png, .jpg, .webp)", type=["png", "jpg", "jpeg", "webp"])
 
@@ -80,104 +80,83 @@ if uploaded_image is not None:
                 elif 15.1 <= rt_val <= 30.0:
                     gc_batches["High-Molecular Weight Lipids / Fatty Acids (15.1 - 30.0 min)"].append((rt_val, ab_val))
 
-        # We will use this list to build our PDF rows dynamically
-        pdf_rows_html = ""
+        report_text_lines = []
         has_peaks = False
 
         for batch_name, peaks in gc_batches.items():
             if len(peaks) > 0:
                 has_peaks = True
                 unique_peaks = sorted(list(set(peaks)), key=lambda x: x[0])[:4]
-                st.markdown(f"### 🗂 {batch_name}")
-                peak_list_text = "  |  ".join([f"**{rt} min** (Intensity: {ht})" for rt, ht in unique_peaks])
+                st.markdown(f"### 🗂️ {batch_name}")
+                peak_list_text = "  |  ".join([f"{rt} min (Abundance: {ht})" for rt, ht in unique_peaks])
                 st.info(f"📍 **Resolved Chromatographic Intersections:** {peak_list_text}")
                 
                 expr_text = ""
                 if "Solvent" in batch_name:
-                    expr_text = "These quick elution signals track highly volatile compounds passing through the column with negligible stationary phase interaction. Spikes here typically isolate residual processing components like ethanol or cleaning solvents left over from synthesis packaging."
+                    expr_text = "Chromatographic Expression: These quick elution signals track highly volatile compounds passing through the column with negligible stationary phase interaction. Spikes here typically isolate residual processing components like ethanol or cleaning solvents left over from synthesis packaging."
                 elif "Contaminants" in batch_name:
-                    expr_text = "This retention corridor isolates moderately bound structures. Clusters emerging here often reveal polymer decomposition factors, outgassing phenomena, or aromatic contaminants like benzene derivative rings breaking loose from underlying matrices."
+                    expr_text = "Chromatographic Expression: This retention corridor isolates moderately bound structures. Clusters emerging here often reveal polymer decomposition factors, outgassing phenomena, or aromatic contaminants like benzene derivative rings breaking loose from underlying matrices."
                 elif "Lipids" in batch_name:
-                    expr_text = "These delayed peaks capture heavy, non-volatile compounds strongly bound to the inner coating layer. They require extended elution windows and match heavy lipid profiles, long-chain hydrocarbons, or long-chain fatty acid groups (Palmitic, Oleic, Linoleic matrix variants)."
+                    expr_text = "Chromatographic Expression: These delayed peaks capture heavy, non-volatile compounds strongly bound to the inner coating layer. They require extended elution windows and match heavy lipid profiles, long-chain hydrocarbons, or long-chain fatty acid groups (Palmitic, Oleic, Linoleic matrix variants)."
                 
                 st.write(f"*{expr_text}*")
                 st.markdown("---")
-                
-                # Append to the HTML structure for the report file
-                pdf_rows_html += f"""
-                <tr>
-                    <td><strong>{batch_name}</strong></td>
-                    <td>{peak_list_text.replace('**', '')}</td>
-                    <td>{expr_text}</td>
-                </tr>
-                """
+                report_text_lines.append((batch_name, peak_list_text, expr_text))
 
         st.subheader("📈 Reconstructed Chromatogram Plot")
         st.line_chart(data=extracted_df, x="Retention Time (min)", y="Relative Abundance")
 
-        # --- WEASYPRINT PREMIUM MULTI-PAGE REPORT GENERATION ---
+        # --- SEPARATE DEDICATED BUTTONS SECTION ---
+        st.markdown("### 📥 Export Instrumentation Analysis Records")
+
+        # Button 1: Quick Sheet
+        def generate_quick_gc_pdf(data_lines):
+            pdf = FPDF()
+            pdf.add_page()
+            pdf.set_font("Helvetica", "B", 16)
+            pdf.cell(0, 12, "GCMS Chrono-Elution Run Record", align="C", new_x="LMARGIN", new_y="NEXT")
+            pdf.set_font("Helvetica", "", 10)
+            pdf.ln(5)
+            for title, points, _ in data_lines:
+                pdf.cell(0, 6, f"- {title}: {points}", new_x="LMARGIN", new_y="NEXT")
+            return pdf.output()
+
+        # Button 2: Detailed Understanding Report
+        def generate_detailed_gc_pdf(data_lines):
+            pdf = FPDF()
+            pdf.add_page()
+            pdf.set_font("Helvetica", "B", 18)
+            pdf.cell(0, 15, "Applied Chaos and Caffeinated Engineering", align="C", new_x="LMARGIN", new_y="NEXT")
+            pdf.set_font("Helvetica", "I", 12)
+            pdf.cell(0, 10, "Comprehensive GCMS Column Elution Diagnostic Report", align="C", new_x="LMARGIN", new_y="NEXT")
+            pdf.line(10, 40, 200, 40)
+            pdf.ln(12)
+            
+            pdf.set_font("Helvetica", "B", 14)
+            pdf.cell(0, 10, "1. Executive Chromatographic Metric Summary", new_x="LMARGIN", new_y="NEXT")
+            pdf.set_font("Helvetica", "", 11)
+            pdf.multi_cell(0, 6, "This official record compiles the retention index timelines extracted via matrix edge threshold profiles. Component shifts isolate compound identities, verifying fraction purity grades against structural reference thresholds.")
+            pdf.ln(5)
+            
+            pdf.set_font("Helvetica", "B", 14)
+            pdf.cell(0, 10, "2. Fraction Corridor Group Analysis", new_x="LMARGIN", new_y="NEXT")
+            for title, points, description in data_lines:
+                pdf.set_font("Helvetica", "B", 11)
+                pdf.cell(0, 7, f"Elution Phase: {title}", new_x="LMARGIN", new_y="NEXT")
+                pdf.set_font("Helvetica", "I", 10)
+                pdf.cell(0, 6, f"Extracted Peaks: {points}", new_x="LMARGIN", new_y="NEXT")
+                pdf.set_font("Helvetica", "", 10)
+                pdf.multi_cell(0, 6, description)
+                pdf.ln(4)
+            return pdf.output()
+
         if has_peaks:
-            html_template = f"""
-            <html>
-            <head>
-                <style>
-                    @page {{ size: A4; margin: 20mm; }}
-                    body {{ font-family: 'Times New Roman', serif; color: #1e293b; line-height: 1.6; }}
-                    h1 {{ text-align: center; font-size: 22pt; margin-bottom: 5px; text-transform: uppercase; }}
-                    .subtitle {{ text-align: center; font-style: italic; color: #475569; margin-bottom: 20px; }}
-                    .divider {{ border-top: 2px solid #0f172a; margin-bottom: 20px; }}
-                    .section-title {{ font-size: 14pt; font-weight: bold; border-bottom: 1px solid #0f172a; padding-bottom: 3px; margin-top: 25px; margin-bottom: 15px; }}
-                    table {{ width: 100%; border-collapse: collapse; margin-top: 15px; }}
-                    th, td {{ border: 1px solid #cbd5e1; padding: 10px; text-align: left; font-size: 10pt; }}
-                    th {{ background-color: #f1f5f9; font-weight: bold; }}
-                    .footer {{ margin-top: 50px; width: 100%; font-size: 11pt; }}
-                </style>
-            </head>
-            <body>
-                <h1>Applied Chemistry & Chemical Engineering Data Suite</h1>
-                <div class="subtitle">Official Instrument Calibration & Chromatographic Interpretation Record</div>
-                <div class="divider"></div>
-                
-                <div class="section-title">1. Computational Verification Metadata</div>
-                <p><strong>Primary Investigator:</strong> Jannatul Ferdous Sujana (Year 2, Semester 2)<br>
-                   <strong>Institution:</strong> University of Dhaka, Bangladesh<br>
-                   <strong>Status:</strong> COMPLETED & COMPUTATIONALLY VALIDATED</p>
-                
-                <div class="section-title">2. Executive Elution Summary</div>
-                <p>This formal document certifies the successful algorithmic extraction of multi-instrument coordinate arrays from flat graphical visual captures. The system successfully tracked sub-pixel edge points to resolve structural components and evaluate compound footprints against chemical library baselines.</p>
-                
-                <div class="section-title">3. Resolved Chromatographic Peak Fractions</div>
-                <table>
-                    <thead>
-                        <tr>
-                            <th style="width: 25%;">Elution Corridor</th>
-                            <th style="width: 25%;">Extracted Peak Center Array</th>
-                            <th style="width: 50%;">Detailed Scientific Interpretation & Molecular Mechanics</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {pdf_rows_html}
-                    </tbody>
-                </table>
-                
-                <div class="footer">
-                    <br><br>
-                    _______________________________________<br>
-                    <strong>Departmental Review Board Verification Sign-Off</strong><br>
-                    University of Dhaka • Authentication Status: ACTIVE
-                </div>
-            </body>
-            </html>
-            """
-            
-            # Compile the string layout straight into a PDF byte object
-            pdf_bytes = HTML(string=html_template).write_pdf()
-            
-            st.download_button(
-                label="📥 Download Detailed Comprehensive Lab Report (PDF)",
-                data=pdf_bytes,
-                file_name="gcms_comprehensive_lab_report.pdf",
-                mime="application/pdf"
-            )
+            c1, c2 = st.columns(2)
+            with c1:
+                pdf_quick = generate_quick_gc_pdf(report_text_lines)
+                st.download_button(label="📄 Download Quick Data Sheet (PDF)", data=bytes(pdf_quick), file_name="gcms_quick_data.pdf", mime="application/pdf")
+            with c2:
+                pdf_detailed = generate_detailed_gc_pdf(report_text_lines)
+                st.download_button(label="📘 Download Detailed Understanding Report (PDF)", data=bytes(pdf_detailed), file_name="gcms_comprehensive_report.pdf", mime="application/pdf")
 else:
     st.info("💡 Ready. Upload a screenshot of your Gas Chromatogram graph to run digitizing diagnostics.")
