@@ -168,6 +168,6 @@ if uploaded_image is not None:
                 st.download_button(label="📄 Download Quick Data Sheet (PDF)", data=bytes(pdf_quick), file_name="ftir_quick_data.pdf", mime="application/pdf")
             with c2:
                 pdf_detailed = generate_detailed_ftir_pdf(report_text_lines)
-                st.download_button(label="📘 Download Detailed Understanding Report (PDF)", data=bytes(pdf_detailed), file_name="ftir_comprehensive_report.pdf", mime="application/pdf")
+                st.download_button(label="📘 Download Report (PDF)", data=bytes(pdf_detailed), file_name="ftir_comprehensive_report.pdf", mime="application/pdf")
 else:
     st.info("💡 Ready. Drop a clean screenshot of an FTIR graph in to run advanced computer vision diagnostics.")
