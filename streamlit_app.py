@@ -80,7 +80,7 @@ with tab_home:
     st.subheader("📑 Export Blank Laboratory Report Templates")
     st.write("Need a professional record for your lab notebook? Generate a clean, formal PDF log frame instantly below:")
 
-  def generate_pdf_report(ftir_peaks, cv_peaks, gcms_peaks):
+  def generate_pdf_report(Ftir_peaks, cv_peaks, Gcms_peaks):
     pdf = FPDF()
     pdf.add_page()
     
