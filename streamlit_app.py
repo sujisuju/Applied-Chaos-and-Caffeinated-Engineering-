@@ -130,4 +130,4 @@ with tab_cv:
     exec(open("cv_analyzer.py").read())
 
 with tab_gcms:
-    exec(open("gcms_analyzer.py").read())
+    exec(open("Gcms_analyzer.py").read())
