@@ -4,9 +4,7 @@ import numpy as np
 import pandas as pd
 from fpdf import FPDF
 
-st.title("🔬 Advanced FTIR Spectral Digitizer & Molecular Interpreter")
-st.write("Extract precise optical data from visual infrared spectra and generate streamlined structural diagnostics.")
-
+# Text-safe, structured sub-module definition
 uploaded_image = st.file_uploader("📂 Upload FTIR Graph Image (.png, .jpg, .jpeg, .webp)", type=["png", "jpg", "jpeg", "webp"])
 
 if uploaded_image is not None:
@@ -63,12 +61,12 @@ if uploaded_image is not None:
 
         st.subheader("🔍 Identified Absorptivity Peaks & Structural Signatures")
         
-        # --- FIXED BATCH TITLES (Standard characters only!) ---
+        # Safe character text arrays for PDF injection
         batches = {
             "Hydroxyl / Bound Water Region (3200 - 3650 cm-1)": [],
             "Aliphatic C-H Backbone stretching Region (2840 - 3000 cm-1)": [],
             "Carbonyl Double-Bond Formations (1690 - 1750 cm-1)": [],
-            "Amide I & II Polymer Coupling Tracks (1530 - 1689 cm-1)": [],
+            "Amide I and II Polymer Coupling Tracks (1530 - 1689 cm-1)": [],
             "Fingerprint Matrix Skeletal Vibrations (400 - 1499 cm-1)": []
         }
         
@@ -84,7 +82,7 @@ if uploaded_image is not None:
                 elif 1690 <= wn_val <= 1750:
                     batches["Carbonyl Double-Bond Formations (1690 - 1750 cm-1)"].append((wn_val, abs_val))
                 elif 1530 <= wn_val <= 1689:
-                    batches["Amide I & II Polymer Coupling Tracks (1530 - 1689 cm-1)"].append((wn_val, abs_val))
+                    batches["Amide I and II Polymer Coupling Tracks (1530 - 1689 cm-1)"].append((wn_val, abs_val))
                 elif wn_val < 1500:
                     batches["Fingerprint Matrix Skeletal Vibrations (400 - 1499 cm-1)"].append((wn_val, abs_val))
 
@@ -96,8 +94,7 @@ if uploaded_image is not None:
                 has_peaks = True
                 unique_peaks = sorted(list(set(peaks)), key=lambda x: x[0], reverse=True)[:5]
                 st.markdown(f"### 🗂️ {batch_name}")
-                # Replaced special sub-script formatting here too
-                peak_list_text = "  |  ".join([f"{wn} cm-1 (Absorbance: {val})" for wn, val in unique_peaks])
+                peak_list_text = "  |  ".join([f"{wn} cm-1 (Abs: {val})" for wn, val in unique_peaks])
                 st.info(f"📍 **Registered Peaks in this Batch:** {peak_list_text}")
                 
                 expr_text = ""
@@ -116,16 +113,16 @@ if uploaded_image is not None:
                 report_text_lines.append((batch_name, peak_list_text, expr_text))
                 st.markdown("---")
 
+        # Visual layout rendering sequence
         st.subheader("📈 Reconstructed Absorbance Coordinate Array")
         st.line_chart(data=extracted_df, x="wavenumber", y="absorbance")
         
-        # --- PDF GENERATOR HUB ---
         def generate_populated_ftir_pdf(data_lines):
             pdf = FPDF()
             pdf.add_page()
             
             pdf.set_font("Helvetica", "B", 18)
-            pdf.cell(0, 15, "Applied Chaos & Caffeinated Engineering", align="C", new_x="LMARGIN", new_y="NEXT")
+            pdf.cell(0, 15, "Applied Chaos and Caffeinated Engineering", align="C", new_x="LMARGIN", new_y="NEXT")
             pdf.set_font("Helvetica", "I", 12)
             pdf.cell(0, 10, "Official FTIR Analytical Verification Report", align="C", new_x="LMARGIN", new_y="NEXT")
             pdf.line(10, 40, 200, 40)
@@ -158,7 +155,7 @@ if uploaded_image is not None:
             pdf_bytes = bytes(pdf_out)
             
             st.download_button(
-                label="📥 Download Processed FTIR Analysis Report (PDF)",
+                label="📥 Download Full Processed FTIR Analysis Report (PDF)",
                 data=pdf_bytes,
                 file_name="ftir_processed_analysis_report.pdf",
                 mime="application/pdf"
