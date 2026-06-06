@@ -2,6 +2,7 @@ import streamlit as st
 import cv2
 import numpy as np
 import pandas as pd
+from fpdf import FPDF
 
 st.title("⚡ Cyclic Voltammetry Matrix Digitizer & Redox Interpreter")
 st.write("Extract dynamic redox potential profiles and scan rates directly from potentiostat graph screenshots.")
@@ -72,27 +73,86 @@ if uploaded_image is not None:
                 v_val = round(potentials[i], 2)
                 i_val = round(smooth_current[i], 2)
                 
-                # Split peaks based on top vs bottom half matrix behavior
                 if i_val >= 0.5:
                     cv_batches["Anodic Oxidation Sweep (Oxidation Peaks)"].append((v_val, i_val))
                 else:
                     cv_batches["Cathodic Reduction Sweep (Reduction Peaks)"].append((v_val, i_val))
 
+        report_text_lines = []
+        has_peaks = False
+
         for batch_name, peaks in cv_batches.items():
             if len(peaks) > 0:
+                has_peaks = True
                 unique_peaks = sorted(list(set(peaks)), key=lambda x: x[0])[:3]
-                st.markdown(f"### 🗂 {batch_name}")
-                peak_list_text = "  |  ".join([f"**{v} V** (Relative Intensity: {curr})" for v, curr in unique_peaks])
+                st.markdown(f"### 🗂️ {batch_name}")
+                peak_list_text = "  |  ".join([f"{v} V (Relative Current: {curr})" for v, curr in unique_peaks])
                 st.info(f"📍 **Registered Faradaic Intersections:** {peak_list_text}")
                 
+                expr_text = ""
                 if "Anodic" in batch_name:
-                    st.write("**🔋 Electrochemical Expression:** These positions mark where electrons are stripped away from chemical species diffusing to the electrode interface. Reaching max height reflects the localized depletion of reduced analyte species at the electrical boundary layer.")
+                    expr_text = "Electrochemical Expression: These positions mark where electrons are stripped away from chemical species diffusing to the electrode interface. Reaching max height reflects the localized depletion of reduced analyte species at the electrical boundary layer."
                 elif "Cathodic" in batch_name:
-                    st.write("**🔋 Electrochemical Expression:** This represents active electron injection into the molecular matrix. Peaks tracking here isolate coordinates where reduction kinetics dominate, allowing calculation of your system's peak separation profile ($\Delta E_p$).")
+                    expr_text = "Electrochemical Expression: This represents active electron injection into the molecular matrix. Peaks tracking here isolate coordinates where reduction kinetics dominate, allowing calculation of your system's peak separation profile."
+                
+                st.write(f"**{expr_text}**")
                 st.markdown("---")
+                report_text_lines.append((batch_name, peak_list_text, expr_text))
 
-        # --- CHART AT BOTTOM ---
         st.subheader("📈 Reconstructed Cyclic Voltammetry Sweep Plot")
         st.line_chart(data=extracted_df, x="Potential (V)", y="Relative Current")
+
+        # --- SEPARATE DEDICATED BUTTONS SECTION ---
+        st.markdown("### 📥 Export Instrumentation Analysis Records")
+
+        # Button 1: Quick Sheet
+        def generate_quick_cv_pdf(data_lines):
+            pdf = FPDF()
+            pdf.add_page()
+            pdf.set_font("Helvetica", "B", 16)
+            pdf.cell(0, 12, "Cyclic Voltammetry Sweep Log", align="C", new_x="LMARGIN", new_y="NEXT")
+            pdf.set_font("Helvetica", "", 10)
+            pdf.ln(5)
+            for title, points, _ in data_lines:
+                pdf.cell(0, 6, f"- {title}: {points}", new_x="LMARGIN", new_y="NEXT")
+            return pdf.output()
+
+        # Button 2: Detailed Understanding Report
+        def generate_detailed_cv_pdf(data_lines):
+            pdf = FPDF()
+            pdf.add_page()
+            pdf.set_font("Helvetica", "B", 18)
+            pdf.cell(0, 15, "Applied Chaos and Caffeinated Engineering", align="C", new_x="LMARGIN", new_y="NEXT")
+            pdf.set_font("Helvetica", "I", 12)
+            pdf.cell(0, 10, "Comprehensive Electrochemical Kinetic Evaluation Report", align="C", new_x="LMARGIN", new_y="NEXT")
+            pdf.line(10, 40, 200, 40)
+            pdf.ln(12)
+            
+            pdf.set_font("Helvetica", "B", 14)
+            pdf.cell(0, 10, "1. Executive Faradaic Matrix Diagnostic Summary", new_x="LMARGIN", new_y="NEXT")
+            pdf.set_font("Helvetica", "", 11)
+            pdf.multi_cell(0, 6, "This official report certifies the mathematical extraction of reversible electron transfer loops. The digital peak-filtering array isolates oxidation-reduction current densities, allowing rigorous validation of diffusion mechanics and boundary layer kinetics.")
+            pdf.ln(5)
+            
+            pdf.set_font("Helvetica", "B", 14)
+            pdf.cell(0, 10, "2. Redox Sweep Phase Analysis", new_x="LMARGIN", new_y="NEXT")
+            for title, points, description in data_lines:
+                pdf.set_font("Helvetica", "B", 11)
+                pdf.cell(0, 7, f"Sweep Phase: {title}", new_x="LMARGIN", new_y="NEXT")
+                pdf.set_font("Helvetica", "I", 10)
+                pdf.cell(0, 6, f"Extracted Potential Vertices: {points}", new_x="LMARGIN", new_y="NEXT")
+                pdf.set_font("Helvetica", "", 10)
+                pdf.multi_cell(0, 6, description)
+                pdf.ln(4)
+            return pdf.output()
+
+        if has_peaks:
+            c1, c2 = st.columns(2)
+            with c1:
+                pdf_quick = generate_quick_cv_pdf(report_text_lines)
+                st.download_button(label="📄 Download Quick Data Sheet (PDF)", data=bytes(pdf_quick), file_name="cv_quick_data.pdf", mime="application/pdf")
+            with c2:
+                pdf_detailed = generate_detailed_cv_pdf(report_text_lines)
+                st.download_button(label="📘 Download Detailed Understanding Report (PDF)", data=bytes(pdf_detailed), file_name="cv_comprehensive_report.pdf", mime="application/pdf")
 else:
     st.info("💡 Ready. Upload a voltammetry screenshot to extract redox data structures.")
